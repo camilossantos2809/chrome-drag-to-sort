@@ -33,6 +33,7 @@ const Item = ({ children, positions, id }: ItemProps) => {
     Dimensions.get("window").height - inset.top - inset.bottom;
   const contentHeight = (Object.keys(positions.value).length / COL) * SIZE;
   const position = getPosition(positions.value[id]);
+  const isGestureActive = useSharedValue(false);
   const translateX = useSharedValue(position.x);
   const translateY = useSharedValue(position.y);
   const onGestureEvent = useAnimatedGestureHandler<
@@ -40,6 +41,7 @@ const Item = ({ children, positions, id }: ItemProps) => {
     { x: number; y: number }
   >({
     onStart: (_, ctx) => {
+      isGestureActive.value = true;
       ctx.x = translateX.value;
       ctx.y = translateY.value;
     },
@@ -49,20 +51,26 @@ const Item = ({ children, positions, id }: ItemProps) => {
     },
     onEnd: () => {
       const destination = getPosition(positions.value[id]);
-      translateX.value = withTiming(destination.x, animationConfig);
+      translateX.value = withTiming(destination.x, animationConfig, () => {
+        isGestureActive.value = false;
+      });
       translateY.value = withTiming(destination.y, animationConfig);
     },
   });
   const style = useAnimatedStyle(() => {
+    const zIndex = isGestureActive.value ? 100 : 0;
+    const scale = isGestureActive.value ? 0.9 : 1;
     return {
       position: "absolute",
       top: 0,
       left: 0,
       width: SIZE,
       height: SIZE,
+      zIndex,
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
+        { scale },
       ],
     };
   });

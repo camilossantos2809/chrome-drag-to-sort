@@ -6,6 +6,7 @@ import {
 } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedGestureHandler,
+  useAnimatedReaction,
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
@@ -36,6 +37,14 @@ const Item = ({ children, positions, id }: ItemProps) => {
   const isGestureActive = useSharedValue(false);
   const translateX = useSharedValue(position.x);
   const translateY = useSharedValue(position.y);
+  useAnimatedReaction(
+    () => positions.value[id],
+    (newOrder) => {
+      const newPositions = getPosition(newOrder);
+      translateX.value = withTiming(newPositions.x, animationConfig);
+      translateY.value = withTiming(newPositions.y, animationConfig);
+    }
+  );
   const onGestureEvent = useAnimatedGestureHandler<
     PanGestureHandlerGestureEvent,
     { x: number; y: number }
@@ -48,6 +57,19 @@ const Item = ({ children, positions, id }: ItemProps) => {
     onActive: ({ translationX, translationY }, ctx) => {
       translateX.value = ctx.x + translationX;
       translateY.value = ctx.y + translationY;
+      const oldOrder = positions.value[id];
+      const newOrder = getOrder(translateX.value, translateY.value);
+      if (oldOrder !== newOrder) {
+        const idToSwap = Object.keys(positions.value).find(
+          (key) => positions.value[key] === newOrder
+        );
+        if (idToSwap) {
+          const newPositions = JSON.parse(JSON.stringify(positions.value));
+          newPositions[id] = newOrder;
+          newPositions[idToSwap] = oldOrder;
+          positions.value = newPositions;
+        }
+      }
     },
     onEnd: () => {
       const destination = getPosition(positions.value[id]);

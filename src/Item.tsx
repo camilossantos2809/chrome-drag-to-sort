@@ -47,6 +47,11 @@ const Item = ({ children, positions, id }: ItemProps) => {
       translateX.value = ctx.x + translationX;
       translateY.value = ctx.y + translationY;
     },
+    onEnd: () => {
+      const destination = getPosition(positions.value[id]);
+      translateX.value = withTiming(destination.x, animationConfig);
+      translateY.value = withTiming(destination.y, animationConfig);
+    },
   });
   const style = useAnimatedStyle(() => {
     return {

@@ -47,11 +47,11 @@ const Chrome = () => {
       style={{ flex: 1, backgroundColor: "black", paddingHorizontal: MARGIN }}
     >
       <SortableList>
-        {tiles.map((tile) => (
+        {[...tiles, ...tiles].map((tile, index) => (
           <Tile
+            key={`${tile.id} - ${index}`}
+            id={`${tile.id} - ${index}`}
             onLongPress={() => true}
-            key={tile.id}
-            id={tile.id}
             uri={tile.uri}
           />
         ))}

@@ -1,10 +1,11 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, RefObject } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
 import Animated, {
+  scrollTo,
   useAnimatedGestureHandler,
   useAnimatedReaction,
   useAnimatedStyle,
@@ -26,9 +27,11 @@ interface ItemProps {
   children: ReactNode;
   id: string;
   positions: Animated.SharedValue<Positions>;
+  scrollView: RefObject<Animated.ScrollView>;
+  scrollY: Animated.SharedValue<number>;
 }
 
-const Item = ({ children, positions, id }: ItemProps) => {
+const Item = ({ children, positions, id, scrollView, scrollY }: ItemProps) => {
   const inset = useSafeAreaInsets();
   const containerHeight =
     Dimensions.get("window").height - inset.top - inset.bottom;
@@ -69,6 +72,24 @@ const Item = ({ children, positions, id }: ItemProps) => {
           newPositions[idToSwap] = oldOrder;
           positions.value = newPositions;
         }
+      }
+      const lowerBound = scrollY.value;
+      const upperBound = lowerBound + containerHeight - SIZE;
+      const maxScroll = contentHeight - containerHeight;
+      const scrollLeft = maxScroll - scrollY.value;
+      if (translateY.value < lowerBound) {
+        const diff = Math.min(lowerBound - translateY.value, lowerBound);
+        scrollY.value -= diff;
+        ctx.y -= diff;
+        translateY.value = ctx.y + translationY;
+        scrollTo(scrollView, 0, scrollY.value, false);
+      }
+      if (translateY.value > upperBound) {
+        const diff = Math.min(translateY.value - upperBound, scrollLeft);
+        scrollY.value += diff;
+        ctx.y += diff;
+        translateY.value = ctx.y + translationY;
+        scrollTo(scrollView, 0, scrollY.value, false);
       }
     },
     onEnd: () => {
